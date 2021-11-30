@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Account confirmation</title>
+</head>
+<body>
+     <p th:text="${user.getId()}">VALUE</p>
+
+     <b>Account confirmation: </b><br>
+
+     <a th:href="@{/auth/confirm/:{id}(id=${user.getId()})}">follow this link to confirm registration</a>
+
+</body>
+</html>

@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Game edit</title>
+</head>
+<body>
+    <form th:method="PUT" th:action="@{/games/:{id}(id=*{id})}" th:object="${game}">
+        <p>Edit game</p>
+        <input type="text" th:field="*{name}" />
+        <input type="submit" value="Save game"/>
+</form>
+</body>
+</html>
