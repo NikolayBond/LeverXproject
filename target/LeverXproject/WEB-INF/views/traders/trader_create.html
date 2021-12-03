@@ -17,6 +17,20 @@
     <input type="text" th:field="*{text}" id="text"/>
     <div style="color:red" th:if="${#fields.hasErrors('text')}" th:errors="*{text}">Text error</div>
     <br><br>
+    <label>Choose game:</label>
+    <div th:each="game : ${games}">
+        <input type="radio" name="gameId" th:text=" ${game.getName()}" th:value="${game.getId()}" checked />
+    </div>
+    <br>
+    <div th:object="${user}">
+        <label for="email">Enter email: </label>
+        <input type="text" th:field="*{email}" id="email"/>
+        <div style="color:red" th:if="${#fields.hasErrors('email')}" th:errors="*{email}">Name Error</div>      <br><br>
+        <label for="password">Enter password: </label>
+        <input type="password" th:field="*{password}" id="password"/>
+        <div style="color:red" th:if="${#fields.hasErrors('password')}" th:errors="*{password}">Name Error</div>      <br><br>
+    </div>
+    <br><br>
     <input type="submit" value="Create new object"/>
 </form>
 

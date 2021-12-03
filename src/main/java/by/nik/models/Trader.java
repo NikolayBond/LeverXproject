@@ -2,39 +2,49 @@ package by.nik.models;
 
 import org.springframework.stereotype.Component;
 
+import javax.persistence.*;
 import javax.validation.constraints.NotEmpty;
+import java.sql.Timestamp;
 import java.util.Date;
-import java.util.UUID;
-
 
 @Component
+@Entity
+@Table(name = "GameObjects")
 public class Trader {
     public enum Status {CHECKED, UNCHECKED};
 
-    private String id; //UID Integer
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id; //UID Integer
+
     @NotEmpty(message = "Field shouldn't be empty")
     private String title;
     @NotEmpty(message = "Field shouldn't be empty")
     private String text; // must be TEXT
+    @Enumerated(EnumType.STRING)
     private Status status;
-    private String author_id; //UID Integer
+
+// проверить используется ли этот блок, если нет - убрать
+//    @ManyToOne(fetch = FetchType.LAZY)
+//    @JoinColumn(name = "id")
+//    User user;
+        private Integer author_id; //UID Integer
+
     private Date created_at;
     private Date updated_at;
-    private String game_id; //UID Integer
+    private Integer game_id; //UID Integer
 
     public Trader() {
-        UUID uniqueKey = UUID.randomUUID();
-        this.id = uniqueKey.toString();
-        this.created_at = new Date();
-        this.updated_at = new Date();
+        this.created_at =  new Timestamp(System.currentTimeMillis());
+        this.updated_at =  new Timestamp(System.currentTimeMillis());
         this.status = Status.UNCHECKED;
 
         // only for example
-        this.author_id = "1";
-        this.game_id = "1";
+//        this.author_id = "1";
+//        this.game_id = "1";
     }
 
-    public void setId(String id) {
+    public void setId(Integer id) {
         this.id = id;
     }
 
@@ -50,7 +60,7 @@ public class Trader {
         this.status = status;
     }
 
-    public void setAuthor_id(String author_id) {
+    public void setAuthor_id(Integer author_id) {
         this.author_id = author_id;
     }
 
@@ -62,11 +72,11 @@ public class Trader {
         this.updated_at = updated_at;
     }
 
-    public void setGame_id(String game_id) {
+    public void setGame_id(Integer game_id) {
         this.game_id = game_id;
     }
 
-    public String getId() {
+    public Integer getId() {
         return id;
     }
 
@@ -82,7 +92,7 @@ public class Trader {
         return status;
     }
 
-    public String getAuthor_id() {
+    public Integer getAuthor_id() {
         return author_id;
     }
 
@@ -94,7 +104,7 @@ public class Trader {
         return updated_at;
     }
 
-    public String getGame_id() {
+    public Integer getGame_id() {
         return game_id;
     }
 }

@@ -2,54 +2,52 @@ package by.nik.controllers;
 
 import by.nik.dao.GameDAO;
 import by.nik.models.Game;
-import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 
 @Controller
 @RequestMapping("/games")
 public class GameController {
+// добавить контроль за ошибками (return) из gameDAO
     final GameDAO gameDAO;
-
     public GameController(GameDAO gameDAO) {
         this.gameDAO = gameDAO;
     }
 
-//    @GetMapping
-//    public String getAll(Model model) {
-//        model.addAttribute("games", gameDAO.readAll());
-//        return "users/games_show_all";
-//    }
 
-    @GetMapping(path = "", produces = MediaType.APPLICATION_JSON_VALUE)
-    public List<Game> getAll() {
-        return gameDAO.readAll();
+    @GetMapping
+    public String getAll(Model model) {
+        model.addAttribute("games", gameDAO.readAll());
+        return "games/games_show_all";
     }
-
 
     @GetMapping("/new")
     public String createForm(@ModelAttribute("game") Game game) {
-        return "users/game_create";
+        return "games/game_create";
     }
 
     @PostMapping
-    @ResponseBody
-    public void create(@ModelAttribute("game") Game game){
+    public String create(@ModelAttribute("game") Game game){
         gameDAO.create(game);
+        return "redirect:/games";
     }
 
     @GetMapping("/:{gameID}/edit")
-    public String editeForm(@PathVariable("gameID") String gameID, @ModelAttribute("game") Game game){
+    public String editForm(@PathVariable("gameID") Integer gameID, @ModelAttribute("game") Game game){
         game.setId(gameID);
-        return "users/game_edit";
+        game.setName(gameDAO.read(gameID).getName());
+        return "games/game_edit";
     }
 
     @PutMapping("/:{gameID}")
-    @ResponseBody
-    public void update(@PathVariable("gameID") String gameID, @RequestParam("name") String name){
-        gameDAO.update(gameID, name);
+    public String update(@PathVariable("gameID") Integer gameID, @RequestParam("name") String name,
+            @ModelAttribute("game") Game game){
+        game.setId(gameID);
+        game.setName(name);
+        gameDAO.update(game);
+        return "redirect:/games";
     }
 
 }

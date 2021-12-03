@@ -1,21 +1,22 @@
 package by.nik.models;
 
 import org.springframework.stereotype.Component;
-
-import java.util.UUID;
+import javax.persistence.*;
 
 @Component
+@Entity
+@Table(name = "games")
 public class Game {
-    private String id; //UID
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id; //UID
+    @Column(name = "name")
     private String name;
 
     public Game() {
-        UUID uniqueKey = UUID.randomUUID();
-//        this.id = uniqueKey.hashCode();
-        this.id = uniqueKey.toString();
     }
 
-    public String getId() {
+    public Integer getId() {
         return id;
     }
 
@@ -23,7 +24,7 @@ public class Game {
         return name;
     }
 
-    public void setId(String id) {
+    public void setId(Integer id) {
         this.id = id;
     }
 

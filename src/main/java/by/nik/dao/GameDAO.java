@@ -1,26 +1,15 @@
 package by.nik.dao;
 
 import by.nik.models.Game;
-import org.springframework.beans.factory.annotation.Autowired;
+import by.nik.util.HibernateSessionFactoryUtil;
+import org.hibernate.Session;
+import org.hibernate.Transaction;
 import org.springframework.stereotype.Component;
-import redis.clients.jedis.Jedis;
 
-import javax.annotation.PreDestroy;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 @Component
 public class GameDAO {
-//    Jedis jedis = new Jedis("localhost");
-    @Autowired
-    private Jedis jedis;
-
-    @PreDestroy
-    private void preDestroy() {
-        jedis.close();
-    }
-
 
     Game game;
     public GameDAO(Game game) {
@@ -30,27 +19,53 @@ public class GameDAO {
     public GameDAO() {
     }
 
-    public void create(Game game) {
-        // try -> boolean
-        jedis.set("gameID:" + game.getId(), game.getName());
-        jedis.sadd("games", game.getId());
-    }
-
-    public List<Game> readAll() {
-        Set<String> gamesSet = jedis.smembers("games");
-        List<Game> games = new ArrayList<>();
-        for (String id : gamesSet) {
-            Game game = new Game();
-            game.setId(id);
-            game.setName(jedis.get("gameID:" + id));
-            games.add(game);
+    public boolean create(Game game) {
+        try {
+            Session session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
+            Transaction tx1 = session.beginTransaction();
+                session.save(game);
+            tx1.commit();
+            session.close();
+            return true;
+            } catch (Exception e) {
+            return false;
         }
-        return games;
     }
 
-    public void update(String gameId, String name){
-        jedis.set("gameID:" + gameId, name);
-        jedis.sadd("games", gameId);
+    @SuppressWarnings("unchecked")
+    public List<Game> readAll() {
+        try {
+            Session session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
+            List<Game> games = session.createQuery("FROM Game").list();
+            session.close();
+            return games;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    public Game read(Integer gameID) {
+        try {
+            Session session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
+            Game game = session.get(Game.class, gameID);
+            session.close();
+            return game;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    public boolean update(Game game){
+        try {
+            Session session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
+            Transaction tx1 = session.beginTransaction();
+                session.update(game);
+            tx1.commit();
+            session.close();
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
     }
 
 }

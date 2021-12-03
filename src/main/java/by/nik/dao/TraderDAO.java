@@ -1,30 +1,58 @@
 package by.nik.dao;
 
+import by.nik.models.Game;
+import by.nik.models.Login;
 import by.nik.models.Trader;
+import by.nik.models.User;
+import by.nik.util.HibernateSessionFactoryUtil;
+import org.hibernate.Session;
+import org.hibernate.Transaction;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import redis.clients.jedis.Jedis;
 
+import javax.annotation.PreDestroy;
+import java.util.List;
+
 
 @Component
 public class TraderDAO {
-    @Autowired
-    private Jedis jedis;
 
     Trader trader;
-    public TraderDAO(Trader trader) {
+    UserDAO userDAO;
+    public TraderDAO(Trader trader, UserDAO userDAO) {
         this.trader = trader;
+        this.userDAO = userDAO;
     }
 
-    public void create(Trader trader) {
-        //data structure for trader
-        jedis.hset("trader:" + trader.getId(), "title", trader.getTitle());
-        jedis.hset("trader:" + trader.getId(), "text", trader.getText());
-        jedis.hset("trader:" + trader.getId(), "status", trader.getStatus().toString());
-        jedis.hset("trader:" + trader.getId(), "author_id", trader.getAuthor_id());
-        jedis.hset("trader:" + trader.getId(), "created_at", trader.getCreated_at().toString());
-        jedis.hset("trader:" + trader.getId(), "updated_at", trader.getUpdated_at().toString());
-        jedis.hset("trader:" + trader.getId(), "game_id", trader.getGame_id());
+
+    public boolean save(Trader trader, Login login) {
+//        if(userDAO.login(login)!=""){
+        System.out.println(">>>?>>" + trader.getAuthor_id()+trader.getGame_id()+trader.getId()+trader.getText()+trader.getTitle());
+        try {
+            Session session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
+            Transaction tx1 = session.beginTransaction();
+                session.save(trader);
+            tx1.commit();
+            session.close();
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+//        }
+
+    }
+
+    @SuppressWarnings("unchecked")
+    public List<Trader> readAll() {
+        try {
+            Session session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
+            List<Trader> traders = session.createQuery("FROM Trader ").list();
+            session.close();
+            return traders;
+        } catch (Exception e) {
+            return null;
+        }
     }
 
 }

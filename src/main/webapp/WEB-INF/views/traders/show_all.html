@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Show all</title>
+</head>
+<div th:each="trader : ${traders}">
+    <a th:href="@{/games/:{id}/edit(id=${trader.getId})}" th:text="${trader.getName()}">game</a>
+</div>
+
+<br><br>
+<a href="/">Go to home page</a>
+
+</html>

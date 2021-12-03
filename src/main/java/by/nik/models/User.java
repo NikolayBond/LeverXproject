@@ -2,19 +2,24 @@ package by.nik.models;
 
 import org.springframework.stereotype.Component;
 
+import javax.persistence.*;
 import javax.validation.constraints.Email;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.Size;
+import java.sql.Timestamp;
 import java.util.Date;
-import java.util.UUID;
+import java.util.List;
 
 @Component
+@Entity
+@Table(name = "users")
 public class User {
 
-    public enum Role {ADMIN, TRADER, ANONIM};
+    public enum Role {ADMIN, TRADER, USER};
 
-    private Integer id; //UID
-
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
 
     @NotEmpty(message = "Field shouldn't be empty")
     private String first_name;
@@ -26,15 +31,18 @@ public class User {
     @NotEmpty(message = "Field shouldn't be empty")
     @Email(message = "Not valid email")
     private String email;
-    private Date created_at;
+    private Timestamp created_at;
+    @Enumerated(EnumType.STRING)
     private Role role;
 
-    public User() {
-        UUID uniqueKey = UUID.randomUUID();
-        this.id = uniqueKey.hashCode();
+// проверить используется ли этот блок, если нет - убрать
+//    @OneToMany(mappedBy = "author_id", cascade = CascadeType.ALL, orphanRemoval = true)
+//    List<Trader> traders;
 
-        this.created_at = new Date();
+    public User() {
+// must be USER ?
         this.role = Role.TRADER;
+        this.created_at = new Timestamp(System.currentTimeMillis());
     }
 
     public Integer getId() {
@@ -65,10 +73,6 @@ public class User {
         return role;
     }
 
-    public void setId(Integer id) {
-        this.id = id;
-    }
-
     public void setFirst_name(String first_name) {
         this.first_name = first_name;
     }
@@ -83,10 +87,6 @@ public class User {
 
     public void setEmail(String email) {
         this.email = email;
-    }
-
-    public void setCreated_at(Date created_at) {
-        this.created_at = created_at;
     }
 
     public void setRole(Role role) {
