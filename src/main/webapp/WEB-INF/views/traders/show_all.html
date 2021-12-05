@@ -5,7 +5,7 @@
     <title>Show all</title>
 </head>
 <div th:each="trader : ${traders}">
-    <a th:href="@{/games/:{id}/edit(id=${trader.getId})}" th:text="${trader.getName()}">game</a>
+    <a th:href="@{/object/:{id}/edit(id=${trader.getId})}" th:text="${trader.getTitle()}">trader</a>
 </div>
 
 <br><br>

@@ -5,6 +5,7 @@ import by.nik.models.Login;
 import by.nik.models.Trader;
 import by.nik.models.User;
 import by.nik.util.HibernateSessionFactoryUtil;
+import org.hibernate.HibernateException;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,7 +28,7 @@ public class TraderDAO {
 
 
     public boolean save(Trader trader, Login login) {
-//        if(userDAO.login(login)!=""){
+//        if(userDAO.login(login)!=""){ Если пользователь существует
         System.out.println(">>>?>>" + trader.getAuthor_id()+trader.getGame_id()+trader.getId()+trader.getText()+trader.getTitle());
         try {
             Session session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
@@ -52,6 +53,46 @@ public class TraderDAO {
             return traders;
         } catch (Exception e) {
             return null;
+        }
+    }
+
+    public Trader read(Integer traderID) {
+        try {
+            Session session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
+            Trader trader = session.get(Trader.class, traderID);
+            session.close();
+            return trader;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    public boolean update(Trader trader){
+//        if(userDAO.login(login) = ... ){ Если это тот же автор
+        try {
+            Session session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
+            Transaction tx1 = session.beginTransaction();
+                session.update(trader);
+            tx1.commit();
+            session.close();
+            return true;
+        } catch (HibernateException e) {
+            return false;
+        }
+    }
+
+    public boolean delete(Integer traderID){
+//        if(userDAO.login(login) = ... ){ Если это тот же автор
+        try {
+            Session session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
+            Transaction tx1 = session.beginTransaction();
+                Trader trader = session.get(Trader.class, traderID);
+                session.delete(trader);
+            tx1.commit();
+            session.close();
+            return true;
+        } catch (HibernateException e) {
+            return false;
         }
     }
 
