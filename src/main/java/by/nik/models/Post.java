@@ -1,7 +1,6 @@
 package by.nik.models;
 
 import org.springframework.stereotype.Component;
-
 import javax.persistence.*;
 import javax.validation.constraints.NotEmpty;
 import java.sql.Timestamp;
@@ -9,8 +8,8 @@ import java.util.Date;
 
 @Component
 @Entity
-@Table(name = "GameObjects")
-public class Trader {
+@Table(name = "gameObjects")
+public class Post {
     public enum Status {CHECKED, UNCHECKED};
 
     @Id
@@ -28,20 +27,16 @@ public class Trader {
 //    @ManyToOne(fetch = FetchType.LAZY)
 //    @JoinColumn(name = "id")
 //    User user;
-        private Integer author_id; //UID Integer
 
+    private Integer author_id; //UID Integer
     private Date created_at;
     private Date updated_at;
     private Integer game_id; //UID Integer
 
-    public Trader() {
+    public Post() {
         this.created_at =  new Timestamp(System.currentTimeMillis());
         this.updated_at =  new Timestamp(System.currentTimeMillis());
         this.status = Status.UNCHECKED;
-
-        // only for example
-//        this.author_id = "1";
-//        this.game_id = "1";
     }
 
     public void setId(Integer id) {

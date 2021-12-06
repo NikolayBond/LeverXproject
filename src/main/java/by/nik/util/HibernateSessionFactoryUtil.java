@@ -1,7 +1,8 @@
 package by.nik.util;
 
+import by.nik.models.Comment;
 import by.nik.models.Game;
-import by.nik.models.Trader;
+import by.nik.models.Post;
 import by.nik.models.User;
 import org.hibernate.SessionFactory;
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
@@ -18,7 +19,8 @@ public class HibernateSessionFactoryUtil {
                 Configuration configuration = new Configuration().configure();
                 configuration.addAnnotatedClass(Game.class);
                 configuration.addAnnotatedClass(User.class);
-                configuration.addAnnotatedClass(Trader.class);
+                configuration.addAnnotatedClass(Post.class);
+                configuration.addAnnotatedClass(Comment.class);
 
                 StandardServiceRegistryBuilder builder = new StandardServiceRegistryBuilder().applySettings(configuration.getProperties());
                 sessionFactory = configuration.buildSessionFactory(builder.build());

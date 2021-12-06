@@ -1,6 +1,5 @@
 package by.nik.dao;
 
-import by.nik.models.Login;
 import by.nik.models.User;
 import by.nik.util.HibernateSessionFactoryUtil;
 import org.hibernate.HibernateException;
@@ -10,7 +9,6 @@ import org.springframework.stereotype.Component;
 import redis.clients.jedis.Jedis;
 import org.springframework.security.crypto.bcrypt.BCrypt;
 
-import java.util.List;
 import java.util.UUID;
 
 @Component
@@ -146,21 +144,13 @@ public class UserDAO {
         }
     }
 
-    // Это нужно ТОЛЬКО ПОКА НЕТ СЕКУРИТИ - применяем в трейдерах
-    //                return userId; при необходимости - доработать
-    public Integer login(Login login){
-        try {
-            Session session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
-            List<User> users = session.createQuery("from User where email = '" + login.getEmail() + "'").list();
-            if (users.size() > 0) {
-// это проверка на совпадение мыла и пароля в базе
-// булин пока проверку пароля отключил BCrypt.checkpw(login.getPassword(), users.get(0).getPassword());
-                return users.get(0).getId();
-            }
-            session.close();
-            return 0;
-        } catch (Exception e) {
-            return 0;
-        }
+
+    // переделан ОК!
+    public User read(Integer userID) throws HibernateException {
+        Session session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
+        User user = session.get(User.class, userID);
+        session.close();
+        return user;
     }
+
 }

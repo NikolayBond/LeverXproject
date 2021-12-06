@@ -9,6 +9,11 @@ import org.springframework.web.bind.annotation.*;
 
 @Controller
 @RequestMapping("/games")
+
+// GET /games - в результате поиска должны быть игры
+// POST /games – добавить игру
+// PUT /games/:id – обновить игру
+
 public class GameController {
 // добавить контроль за ошибками (return) из gameDAO
     final GameDAO gameDAO;

@@ -13,6 +13,7 @@ public class Comment {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
+    @Column(name = "message")
     @NotEmpty(message = "Field shouldn't be empty")
     private String message;
     private Integer post_id; // UID
@@ -25,6 +26,10 @@ public class Comment {
         this.approved = false;
     }
 
+    public void setId(Integer id) {
+        this.id = id;
+    }
+
     public void setMessage(String message) {
         this.message = message;
     }
@@ -35,6 +40,10 @@ public class Comment {
 
     public void setAuthor_id(Integer author_id) {
         this.author_id = author_id;
+    }
+
+    public void setCreated_at(Timestamp created_at) {
+        this.created_at = created_at;
     }
 
     public void setApproved(Boolean approved) {

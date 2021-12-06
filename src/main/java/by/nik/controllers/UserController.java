@@ -1,26 +1,22 @@
 package by.nik.controllers;
 
 import by.nik.models.User;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
-
 import org.springframework.web.bind.annotation.*;
 import by.nik.dao.UserDAO;
-import redis.clients.jedis.exceptions.JedisDataException;
-
 import javax.validation.Valid;
 import java.util.UUID;
 
 @Controller
 @RequestMapping("/auth")
-public class UserRegistrationController {
+public class UserController {
     private final UserDAO userDAO;
 
     @Autowired
-    public UserRegistrationController(UserDAO userDAO) {
+    public UserController(UserDAO userDAO) {
         this.userDAO = userDAO;
     }
 
