@@ -11,7 +11,7 @@ import java.util.List;
 
 @Component
 public class CommentDAO {
-    private final Comment comment;
+    Comment comment;
     public CommentDAO(Comment comment) {
         this.comment = comment;
     }
@@ -48,7 +48,6 @@ public class CommentDAO {
     }
 
     public void update(Comment comment) throws HibernateException {
-        System.out.println(comment);
         Session session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
         Transaction tx = session.beginTransaction();
             session.update(comment);

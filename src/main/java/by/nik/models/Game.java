@@ -2,6 +2,7 @@ package by.nik.models;
 
 import org.springframework.stereotype.Component;
 import javax.persistence.*;
+import javax.validation.constraints.NotEmpty;
 
 @Component
 @Entity
@@ -11,6 +12,7 @@ public class Game {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id; //UID
     @Column(name = "name")
+    @NotEmpty(message = "Field shouldn't be empty")
     private String name;
 
     public Game() {
@@ -32,5 +34,4 @@ public class Game {
         this.name = name;
     }
 
-    //        ("CS:GO", "Fifa", "Dota", "Team Fortress"));
 }

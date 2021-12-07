@@ -2,6 +2,7 @@ package by.nik.dao;
 
 import by.nik.models.Game;
 import by.nik.util.HibernateSessionFactoryUtil;
+import org.hibernate.HibernateException;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
 import org.springframework.stereotype.Component;
@@ -16,56 +17,43 @@ public class GameDAO {
         this.game = game;
     }
 
-    public GameDAO() {
-    }
-
-    public boolean create(Game game) {
-        try {
-            Session session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
-            Transaction tx1 = session.beginTransaction();
-                session.save(game);
-            tx1.commit();
-            session.close();
-            return true;
-            } catch (Exception e) {
-            return false;
-        }
+    public void create(Game game) throws HibernateException {
+        Session session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
+        Transaction tx = session.beginTransaction();
+            session.save(game);
+        tx.commit();
+        session.close();
     }
 
     @SuppressWarnings("unchecked")
-    public List<Game> readAll() {
-        try {
-            Session session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
-            List<Game> games = session.createQuery("FROM Game").list();
-            session.close();
-            return games;
-        } catch (Exception e) {
-            return null;
-        }
+    public List<Game> readAll() throws HibernateException {
+        Session session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
+        List<Game> games = session.createQuery("FROM Game").list();
+        session.close();
+        return games;
     }
 
-    public Game read(Integer gameID) {
-        try {
-            Session session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
-            Game game = session.get(Game.class, gameID);
-            session.close();
-            return game;
-        } catch (Exception e) {
-            return null;
-        }
+    public Game read(Integer gameID) throws HibernateException {
+        Session session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
+        Game game = session.get(Game.class, gameID);
+        session.close();
+        return game;
     }
 
-    public boolean update(Game game){
-        try {
-            Session session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
-            Transaction tx1 = session.beginTransaction();
-                session.update(game);
-            tx1.commit();
-            session.close();
-            return true;
-        } catch (Exception e) {
-            return false;
-        }
+    @SuppressWarnings("unchecked")
+    public boolean isDuplicate(String name) throws HibernateException {
+        Session session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
+            List<Game> games = session.createQuery("from Game where name = '" + name + "'").list();
+        session.close();
+        return games.size() > 0;
+    }
+
+    public void update(Game game) throws HibernateException{
+        Session session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
+        Transaction tx = session.beginTransaction();
+            session.update(game);
+        tx.commit();
+        session.close();
     }
 
 }
