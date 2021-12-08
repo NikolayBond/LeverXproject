@@ -5,6 +5,8 @@ import by.nik.util.HibernateSessionFactoryUtil;
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import redis.clients.jedis.Jedis;
 import org.springframework.security.crypto.bcrypt.BCrypt;
@@ -17,10 +19,14 @@ import java.util.UUID;
 
 @Component
 public class UserDAO {
+    final
+    PasswordEncoder passwordEncoder;
 
     private User user;
-    public UserDAO(User user) {
+    public UserDAO(User user, PasswordEncoder passwordEncoder) {
         this.user = user;
+
+        this.passwordEncoder = passwordEncoder;
     }
 
 
@@ -46,14 +52,17 @@ public class UserDAO {
      */
 //*****************************
 
-
     public boolean create(User user, String confirmationCode) {
 // add "url" to file par
         try (Jedis jedis = new Jedis("localhost")) {
             if (!jedis.ping().equalsIgnoreCase("PONG")) {return false;}
 
             String originalPassword = user.getPassword();
-            String generatedPasswordHash = BCrypt.hashpw(originalPassword, BCrypt.gensalt(12));
+//            String generatedPasswordHash = BCrypt.hashpw(originalPassword, BCrypt.gensalt(12));
+
+            String generatedPasswordHash = passwordEncoder.encode(originalPassword);
+
+            System.out.println(generatedPasswordHash);
 
             jedis.hset("user:" + confirmationCode, "first_name", user.getFirst_name());
             jedis.hset("user:" + confirmationCode, "last_name", user.getLast_name());
