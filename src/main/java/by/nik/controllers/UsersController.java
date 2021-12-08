@@ -12,11 +12,11 @@ import java.util.UUID;
 
 @Controller
 @RequestMapping("/auth")
-public class UserController {
+public class UsersController {
     private final UserDAO userDAO;
 
     @Autowired
-    public UserController(UserDAO userDAO) {
+    public UsersController(UserDAO userDAO) {
         this.userDAO = userDAO;
     }
 

@@ -12,9 +12,9 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/games")
-public class GameController {
+public class GamesController {
     final GameDAO gameDAO;
-    public GameController(GameDAO gameDAO) {
+    public GamesController(GameDAO gameDAO) {
         this.gameDAO = gameDAO;
     }
 

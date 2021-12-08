@@ -33,7 +33,8 @@ public class CommentsController {
 
     // POST /articles/:id/comments - - добавить со ссылкой на пост и пользователя
     @PostMapping("/articles/{postID}/comments")
-    public ResponseEntity<?> create(@PathVariable("postID") Integer postID, @RequestBody Comment comment, @AuthenticationPrincipal org.springframework.security.core.userdetails.User userFromAuthentication) {
+    public ResponseEntity<?> create(@PathVariable("postID") Integer postID, @RequestBody Comment comment,
+                                    @AuthenticationPrincipal org.springframework.security.core.userdetails.User userFromAuthentication) {
         try {
             Post post = postDAO.read(postID);
             if (post == null) {
@@ -120,9 +121,6 @@ public class CommentsController {
             if (originalComment == null) {
                 return new ResponseEntity<>("comment not found in database", HttpStatus.BAD_REQUEST);
             }
-            if ((comment.getMessage() == "") || (comment.getMessage() == null)) {
-                return new ResponseEntity<>("field 'message' shouldn't be empty", HttpStatus.BAD_REQUEST);
-            }
 // Автора берем из аутентификации
             List<User> users = userDAO.readByEmail(userFromAuthentication.getUsername());
             if (users.size() != 1) {
@@ -132,6 +130,9 @@ public class CommentsController {
                 return new ResponseEntity<>("Request rejected. Only author can update", HttpStatus.BAD_REQUEST);
             }
 
+            if ((comment.getMessage() == "") || (comment.getMessage() == null)) {
+                return new ResponseEntity<>("field 'message' shouldn't be empty", HttpStatus.BAD_REQUEST);
+            }
             originalComment.setMessage(comment.getMessage());
             originalComment.setApproved(false);
             commentDAO.update(originalComment);

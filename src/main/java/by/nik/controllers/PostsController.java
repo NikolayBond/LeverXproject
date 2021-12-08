@@ -4,16 +4,18 @@ import by.nik.dao.GameDAO;
 import by.nik.dao.PostDAO;
 import by.nik.dao.UserDAO;
 import by.nik.models.Post;
+import by.nik.models.User;
 import org.hibernate.HibernateException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.sql.Timestamp;
 import java.util.List;
+import java.util.Objects;
 
 @RestController
-@RequestMapping("/object")
 public class PostsController {
     final PostDAO postDAO;
     final GameDAO gameDAO;
@@ -27,25 +29,35 @@ public class PostsController {
 
 
     //    PUT /object/:id - Редактирование объекта, может только создатель поста
-    @PutMapping("/{postID}")
-    public ResponseEntity<?> update(@PathVariable("postID") Integer postID, @RequestBody Post post) {
+    @PutMapping("/object/{postID}")
+    public ResponseEntity<?> update(@PathVariable("postID") Integer postID, @RequestBody Post post,
+                                    @AuthenticationPrincipal org.springframework.security.core.userdetails.User userFromAuthentication) {
         try {
             Post originalPost = postDAO.read(postID);
             if (originalPost == null) {
                 return new ResponseEntity<>("post (id) not found in database", HttpStatus.BAD_REQUEST);
             }
+// Автора берем из аутентификации
+            List<User> users = userDAO.readByEmail(userFromAuthentication.getUsername());
+            if (users.size() != 1) {
+                return new ResponseEntity<>("nonsense! -> author (from login) not found in database", HttpStatus.BAD_REQUEST);
+            }
+            if (!Objects.equals(originalPost.getAuthor_id(), users.get(0).getId())) {
+                return new ResponseEntity<>("Request rejected. Only author can update", HttpStatus.BAD_REQUEST);
+            }
+
             if ((post.getTitle() == "") || (post.getTitle() == null)) {
                 return new ResponseEntity<>("field 'title' shouldn't be empty", HttpStatus.BAD_REQUEST);
             }
             if ((post.getText() == "") || (post.getText() == null)) {
                 return new ResponseEntity<>("field 'text' shouldn't be empty", HttpStatus.BAD_REQUEST);
             }
+            originalPost.setTitle(post.getTitle());
+            originalPost.setText(post.getText());
             originalPost.setUpdated_at(new Timestamp(System.currentTimeMillis()));
             originalPost.setStatus(Post.Status.UNCHECKED);
-// Автора берем из авторизации
-//        if(userDAO.login(login) = ... ){ Если это тот же автор
             postDAO.update(originalPost);
-            return new ResponseEntity<>(post, HttpStatus.OK);
+            return new ResponseEntity<>(originalPost, HttpStatus.OK);
         } catch (HibernateException h) {
             return new ResponseEntity<>("Database error", HttpStatus.NOT_ACCEPTABLE);
         }
@@ -53,23 +65,15 @@ public class PostsController {
 
 
     //    POST /object - Добавить объект
-    @PostMapping
-    public ResponseEntity<?> create(@RequestBody Post post) {
+    @PostMapping("/object")
+    public ResponseEntity<?> create(@RequestBody Post post,
+                                    @AuthenticationPrincipal org.springframework.security.core.userdetails.User userFromAuthentication) {
         if ((post.getTitle() == "") || (post.getTitle() == null)) {
             return new ResponseEntity<>("field 'title' shouldn't be empty", HttpStatus.BAD_REQUEST);
         }
         if ((post.getText() == "") || (post.getText() == null)) {
             return new ResponseEntity<>("field 'text' shouldn't be empty", HttpStatus.BAD_REQUEST);
         }
-        post.setStatus(Post.Status.UNCHECKED);
-// Автора берем из авторизации
-        if ((post.getAuthor_id() == 0) || (post.getAuthor_id() == null)) {
-            return new ResponseEntity<>("field 'author_id' shouldn't be empty", HttpStatus.BAD_REQUEST);
-        }
-//        if(userDAO... !=){ Если пользователь существует
-// автор до верха
-        post.setCreated_at(new Timestamp(System.currentTimeMillis()));
-        post.setUpdated_at(post.getCreated_at());
         if ((post.getGame_id() == 0) || (post.getGame_id() == null)) {
             return new ResponseEntity<>("field 'game_id' shouldn't be empty", HttpStatus.BAD_REQUEST);
         }
@@ -77,6 +81,16 @@ public class PostsController {
             if (gameDAO.read(post.getGame_id()) == null) {
                 return new ResponseEntity<>("game (id) not found in database", HttpStatus.BAD_REQUEST);
             }
+// Автора берем из аутентификации
+            List<User> users = userDAO.readByEmail(userFromAuthentication.getUsername());
+            if (users.size() != 1) {
+                return new ResponseEntity<>("nonsense! -> author (from login) not found in database", HttpStatus.BAD_REQUEST);
+            }
+            post.setAuthor_id(users.get(0).getId());
+
+            post.setStatus(Post.Status.UNCHECKED);
+            post.setCreated_at(new Timestamp(System.currentTimeMillis()));
+            post.setUpdated_at(post.getCreated_at());
             postDAO.create(post);
             return new ResponseEntity<>(post, HttpStatus.CREATED);
         } catch (HibernateException h) {
@@ -84,8 +98,9 @@ public class PostsController {
         }
     }
 
+
 //    GET /object - получить игровые объекты
-    @GetMapping
+    @GetMapping("/object")
     public ResponseEntity<?> getAll() {
         try {
             List<Post> posts = postDAO.readAll();
@@ -95,13 +110,18 @@ public class PostsController {
         }
     }
 
+
 //    GET /my - получить список постов авторизованного пользователя
     @GetMapping("/my")
-    public ResponseEntity<?> getAllByUserID() {
-// User берем из авторизации
-        Integer author_id = 1;
+    public ResponseEntity<?> getAllByUserID(@AuthenticationPrincipal org.springframework.security.core.userdetails.User userFromAuthentication) {
         try {
-            List<Post> posts = postDAO.readAllByUserID(author_id);
+// Автора берем из аутентификации
+            List<User> users = userDAO.readByEmail(userFromAuthentication.getUsername());
+            if (users.size() != 1) {
+                return new ResponseEntity<>("nonsense! -> author (from login) not found in database", HttpStatus.BAD_REQUEST);
+            }
+
+            List<Post> posts = postDAO.readAllByUserID(users.get(0).getId());
             return new ResponseEntity<>(posts, HttpStatus.OK);
         } catch (HibernateException h) {
             return new ResponseEntity<>("Database error", HttpStatus.NOT_ACCEPTABLE);
@@ -111,8 +131,9 @@ public class PostsController {
 
 
 //    DELETE /object/:id - удалить объект, удалить может только автор
-    @DeleteMapping("/{postID}")
-    public ResponseEntity<?> delete(@PathVariable("postID") Integer postID) {
+    @DeleteMapping("/object/{postID}")
+    public ResponseEntity<?> delete(@PathVariable("postID") Integer postID,
+                                    @AuthenticationPrincipal org.springframework.security.core.userdetails.User userFromAuthentication) {
 // User берем из авторизации
         Integer author_id = 1;
         try {
@@ -120,13 +141,17 @@ public class PostsController {
             if (post == null) {
                 return new ResponseEntity<>("post (id) not found in database", HttpStatus.BAD_REQUEST);
             }
-            if (post.getAuthor_id() == author_id) {
-                postDAO.delete(post);
-                return new ResponseEntity<>("deleted", HttpStatus.OK);
+// Автора берем из аутентификации
+            List<User> users = userDAO.readByEmail(userFromAuthentication.getUsername());
+            if (users.size() != 1) {
+                return new ResponseEntity<>("nonsense! -> author (from login) not found in database", HttpStatus.BAD_REQUEST);
             }
-            else {
-                return new ResponseEntity<>("only author can delete it", HttpStatus.BAD_REQUEST);
+            if (!Objects.equals(post.getAuthor_id(), users.get(0).getId())) {
+                return new ResponseEntity<>("Request rejected. Only author can delete", HttpStatus.BAD_REQUEST);
             }
+            postDAO.delete(post);
+            return new ResponseEntity<>("deleted", HttpStatus.OK);
+
         } catch (HibernateException h) {
             return new ResponseEntity<>("Database error", HttpStatus.NOT_ACCEPTABLE);
         }
