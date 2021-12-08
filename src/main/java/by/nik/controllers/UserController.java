@@ -64,7 +64,7 @@ public class UserController {
 
     @PostMapping("/forgot_password")
     public String confirmationCodeForgotPassword(@RequestParam("email") String email, Model model){
-        if (userDAO.isExistEmailInUserTable(email)){
+        if (userDAO.readByEmail(email).size() == 0){
             UUID uniqueKey = UUID.randomUUID();
             model.addAttribute("confirmationCode", uniqueKey.toString());
             if (!userDAO.setPasswordRecoveryLink(uniqueKey.toString(), email)) {

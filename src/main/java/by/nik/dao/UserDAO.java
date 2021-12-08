@@ -9,6 +9,10 @@ import org.springframework.stereotype.Component;
 import redis.clients.jedis.Jedis;
 import org.springframework.security.crypto.bcrypt.BCrypt;
 
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.util.List;
+import java.util.Properties;
 import java.util.UUID;
 
 @Component
@@ -24,6 +28,24 @@ public class UserDAO {
         UUID uniqueKey = UUID.randomUUID();
         return uniqueKey.toString();
     }
+
+ // file properties
+    /*
+    String rootPath = Thread.currentThread().getContextClassLoader().getResource("").getPath();
+    String defaultConfigPath = rootPath + "redis.properties";
+    Properties properties;
+    {
+        Properties properties = new Properties();
+        try {
+            properties.load(new FileInputStream(defaultConfigPath));
+        } catch (IOException e) {
+        }
+    }
+    String redisUrl = properties.getProperty("redis.url", "localhost");
+
+     */
+//*****************************
+
 
     public boolean create(User user, String confirmationCode) {
 // add "url" to file par
@@ -79,17 +101,12 @@ public class UserDAO {
 
     }
 
-    public boolean isExistEmailInUserTable(String email){
-        try {
-            Session session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
-            if (session.createQuery("from User where email = '" + email + "'").list().size() > 0) {
-                return true;
-            }
-            session.close();
-            return false;
-        } catch (Exception e) {
-            return false;
-        }
+    @SuppressWarnings("unchecked")
+    public List<User> readByEmail(String email) throws HibernateException {
+        Session session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
+        List<User> users = session.createQuery("from User where email = '" + email + "'").list();
+        session.close();
+        return users;
     }
 
     public boolean setPasswordRecoveryLink(String confirmationCode, String email){
