@@ -66,7 +66,7 @@ public class UsersController {
                 userDAO.save(user);
                 return new ResponseEntity<>("Congratulations on successful registration !", HttpStatus.OK);
             } else {
-                return new ResponseEntity<>("Confirmation link УСТАЛЕЛ или НЕВЕРЕН", HttpStatus.I_AM_A_TEAPOT);
+                return new ResponseEntity<>("Confirmation link outdated or wrong", HttpStatus.I_AM_A_TEAPOT);
             }
 
         } catch (JedisException | HibernateException j) {
@@ -117,7 +117,7 @@ public class UsersController {
                 userDAO.isPasswordReset(code, new_password);
                 return new ResponseEntity<>("reset password ok!", HttpStatus.OK);
             } else {
-                return new ResponseEntity<>("Confirmation link УСТАЛЕЛ или НЕВЕРЕН", HttpStatus.I_AM_A_TEAPOT);
+                return new ResponseEntity<>("Confirmation link outdated or wrong", HttpStatus.I_AM_A_TEAPOT);
             }
         } catch (JedisException | HibernateException j) {
             return new ResponseEntity<>("Database error", HttpStatus.NOT_ACCEPTABLE);
@@ -130,7 +130,7 @@ public class UsersController {
             if (userDAO.isPasswordRecoveryLink(code)) {
                 return new ResponseEntity<>("Confirmation link ok!", HttpStatus.OK);
             } else {
-                return new ResponseEntity<>("Confirmation link УСТАЛЕЛ или НЕВЕРЕН", HttpStatus.I_AM_A_TEAPOT);
+                return new ResponseEntity<>("Confirmation link outdated or wrong", HttpStatus.I_AM_A_TEAPOT);
             }
         } catch (JedisException j) {
             return new ResponseEntity<>("Redis database error", HttpStatus.NOT_ACCEPTABLE);

@@ -23,11 +23,6 @@ public class Post {
     @Enumerated(EnumType.STRING)
     private Status status;
 
-// проверить используется ли этот блок, если нет - убрать
-//    @ManyToOne(fetch = FetchType.LAZY)
-//    @JoinColumn(name = "id")
-//    User user;
-
     private Integer author_id; //UID Integer
     private Date created_at;
     private Date updated_at;

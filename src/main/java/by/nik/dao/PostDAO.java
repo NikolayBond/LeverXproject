@@ -52,11 +52,20 @@ public class PostDAO {
         return posts;
     }
 
+    //for admin
+    @SuppressWarnings("unchecked")
+    public List<Post> readAllUnchecked() throws HibernateException {
+        Session session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
+        List<Post> posts = session.createQuery("FROM Post where status = 'UNCHECKED'").list();
+        session.close();
+        return posts;
+    }
+
     public void update(Post post) throws HibernateException{
         Session session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
-        Transaction tx1 = session.beginTransaction();
+        Transaction tx = session.beginTransaction();
             session.update(post);
-        tx1.commit();
+        tx.commit();
         session.close();
     }
 

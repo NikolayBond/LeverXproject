@@ -39,6 +39,15 @@ public class CommentDAO {
         return comment;
     }
 
+    //for admin
+    @SuppressWarnings("unchecked")
+    public List<Comment> readAllUnchecked() throws HibernateException {
+        Session session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
+        List<Comment> comments = session.createQuery("FROM Comment where approved = false").list();
+        session.close();
+        return comments;
+    }
+
     public void delete(Comment comment) throws HibernateException {
         Session session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
         Transaction tx = session.beginTransaction();
