@@ -17,10 +17,11 @@ import javax.sql.DataSource;
 @EnableWebSecurity
 public class ApplicationSecurityConfig extends WebSecurityConfigurerAdapter {
 
-    @Override
-    public void configure(WebSecurity web) throws Exception {
-        web.ignoring().antMatchers("/games", "/auth");
-    }
+//    @Override
+//    public void configure(WebSecurity web) throws Exception {
+//        web.ignoring().antMatchers("/games");
+////        web.ignoring().antMatchers("/*");
+//    }
 
     final
     DataSource dataSource;
@@ -33,13 +34,14 @@ public class ApplicationSecurityConfig extends WebSecurityConfigurerAdapter {
     protected void configure(HttpSecurity httpSecurity) throws Exception {
         httpSecurity.csrf().disable()
                 .authorizeRequests()
-                .antMatchers("/*").permitAll()
-//                .antMatchers("/admin/**").hasAnyAuthority("USER", "ADMIN", "TRADER")
+//                .anyRequest().authenticated()
+                .antMatchers("/admin/**").hasAnyAuthority("USER", "ADMIN", "TRADER")
+                .antMatchers("/home", "/auth/**").permitAll().anyRequest().authenticated()
                 .and().httpBasic();
     }
 
 
-    @Override
+
     public void configure(AuthenticationManagerBuilder auth) throws Exception {
         auth.jdbcAuthentication()
                 .dataSource(dataSource)

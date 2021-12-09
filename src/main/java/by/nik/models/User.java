@@ -25,7 +25,7 @@ public class User {
     @NotEmpty(message = "Field shouldn't be empty")
     private String last_name;
     @NotEmpty(message = "Field shouldn't be empty")
-    @Size(min = 8, message = "Password must be >=8 characters")
+    @Size(min = 4, message = "Password must be >=4 characters")
     private String password;
     @NotEmpty(message = "Field shouldn't be empty")
     @Email(message = "Not valid email")
@@ -34,13 +34,8 @@ public class User {
     @Enumerated(EnumType.STRING)
     private Role role;
 
-// проверить используется ли этот блок, если нет - убрать
-//    @OneToMany(mappedBy = "author_id", cascade = CascadeType.ALL, orphanRemoval = true)
-//    List<Trader> traders;
-
     public User() {
-// must be USER ?
-        this.role = Role.TRADER;
+        this.role = Role.USER;
         this.created_at = new Timestamp(System.currentTimeMillis());
     }
 

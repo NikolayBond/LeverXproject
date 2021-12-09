@@ -11,15 +11,16 @@ public class HomePageController {
 //    public String homePage() {
 //        return "home/index";
 //    }
-    @GetMapping()
+    @GetMapping("/home")
     public String homePage(@AuthenticationPrincipal User user) {
         System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
-        System.out.println(user);
+        if (user !=null) {
+            System.out.println(user);
 //org.springframework.security.core.userdetails.User [Username=admin, Password=[PROTECTED], Enabled=true, AccountNonExpired=true, credentialsNonExpired=true, AccountNonLocked=true, Granted Authorities=[ROLE_USER]]
-        System.out.println(user.getUsername()); //admin
-        System.out.println(user.getAuthorities()); //[ROLE_USER]
-        System.out.println(user.getPassword()); // null
+            System.out.println(user.getUsername()); //admin
+            System.out.println(user.getAuthorities()); //[ROLE_USER]
+            System.out.println(user.getPassword()); // null
+        }
         return "home/index";
     }
-
 }

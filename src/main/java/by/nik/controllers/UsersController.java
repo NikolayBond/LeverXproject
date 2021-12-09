@@ -1,105 +1,139 @@
 package by.nik.controllers;
 
 import by.nik.models.User;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
-import org.springframework.validation.BindingResult;
+import org.hibernate.HibernateException;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import by.nik.dao.UserDAO;
-import javax.validation.Valid;
-import java.util.UUID;
+import redis.clients.jedis.exceptions.JedisException;
 
-@Controller
+import java.util.UUID;
+import java.util.regex.Pattern;
+
+@RestController
 @RequestMapping("/auth")
 public class UsersController {
-    private final UserDAO userDAO;
 
-    @Autowired
+    private final UserDAO userDAO;
     public UsersController(UserDAO userDAO) {
         this.userDAO = userDAO;
     }
 
-    @GetMapping("/registration")
-    public String newUserRegistration(@ModelAttribute("user") User user){
-            return "users/registration";
-        }
-
     @PostMapping()
-    public String createNewUser(@ModelAttribute("user") @Valid User user, BindingResult bindingResult, Model model) {
-
-        if (bindingResult.hasErrors()) {
-            return "users/registration";
+    public ResponseEntity<?> create(@RequestBody User user) {
+        if ((user.getFirst_name() == "") || (user.getFirst_name() == null)) {
+            return new ResponseEntity<>("field 'first_name' shouldn't be empty", HttpStatus.BAD_REQUEST);
         }
-
-        String confirmationCode = userDAO.createConfirmationCode();
-        model.addAttribute("confirmationCode", confirmationCode);
-
-        if (userDAO.create(user, confirmationCode)){
-            return "users/link_confirmation_registration";
-        } else {
-            return "errors/error_redis_database";
+        if ((user.getLast_name() == "") || (user.getLast_name() == null)) {
+            return new ResponseEntity<>("field 'last_name' shouldn't be empty", HttpStatus.BAD_REQUEST);
         }
-    }
-
-    @GetMapping("/confirm/:{confirmationCode}")
-    public String confirmationLink(@PathVariable("confirmationCode") String confirmationCode, @ModelAttribute("user") User user) {
-        if (userDAO.isConfirmedRegistrationLink(confirmationCode, user)) {
-
-            if (userDAO.save(user)) {
-                return "users/congratulations_success_registration";
-            } else {
-                return "errors/error_database";
+        if ((user.getPassword() == null) || (user.getPassword().length() < 4)) {
+            return new ResponseEntity<>("Password shouldn't be empty and must be >=4 characters", HttpStatus.BAD_REQUEST);
+        }
+        if ((user.getEmail() == "") || (user.getEmail() == null)) {
+            return new ResponseEntity<>("field 'email' shouldn't be empty", HttpStatus.BAD_REQUEST);
+        }
+        String emailRegex = "^(.+)@(.+)$";
+        //"^[A-Za-z0-9+_.-]+@[a-zA-Z0-9.-]+$"
+        Pattern pattern = Pattern.compile(emailRegex);
+        if (!pattern.matcher(user.getEmail()).matches()) {
+            return new ResponseEntity<>("Not valid email", HttpStatus.BAD_REQUEST);
+        }
+        try {
+            if (userDAO.isPresent(user.getEmail())) {
+                return new ResponseEntity<>("Duplicate - this email already present", HttpStatus.BAD_REQUEST);
             }
-        } else {
-            return "errors/error_confirmation_link";
+
+            UUID uniqueKey = UUID.randomUUID();
+            String confirmationCode = uniqueKey.toString();
+
+            if (userDAO.create(user, confirmationCode)) {
+                return new ResponseEntity<>("follow this link to confirm registration /auth/confirm/" + confirmationCode, HttpStatus.OK);
+            } else {
+                return new ResponseEntity<>("Redis database error", HttpStatus.NOT_ACCEPTABLE);
+            }
+        } catch (HibernateException h) {
+            return new ResponseEntity<>("Database error", HttpStatus.NOT_ACCEPTABLE);
         }
     }
 
 
-    @GetMapping("/forgot_password")
-    public String userForgotPassword(){
-            return "users/forgot_password";
+    @GetMapping("/confirm/{confirmationCode}")
+    public ResponseEntity<?> confirmationLink(@PathVariable("confirmationCode") String confirmationCode, @ModelAttribute("user") User user) {
+        try {
+            if (userDAO.isConfirmedRegistrationLink(confirmationCode, user)) {
+                userDAO.save(user);
+                return new ResponseEntity<>("Congratulations on successful registration !", HttpStatus.OK);
+            } else {
+                return new ResponseEntity<>("Confirmation link УСТАЛЕЛ или НЕВЕРЕН", HttpStatus.I_AM_A_TEAPOT);
+            }
+
+        } catch (JedisException | HibernateException j) {
+            return new ResponseEntity<>("Database error", HttpStatus.NOT_ACCEPTABLE);
         }
+    }
+
+    /*
+    стандартному сценарию./auth/forgot_password POST {email} отправлять письмо
+    с кодом
+/auth/reset POST {code, new_password} брать из редиса код и если он верен,
+    то устанавливать новый пароль
+/auth/check_code GET {code} проверять актуальность кода сброса и возвращать   в ответ
+     */
 
     @PostMapping("/forgot_password")
-    public String confirmationCodeForgotPassword(@RequestParam("email") String email, Model model){
-        if (userDAO.readByEmail(email).size() == 0){
-            UUID uniqueKey = UUID.randomUUID();
-            model.addAttribute("confirmationCode", uniqueKey.toString());
-            if (!userDAO.setPasswordRecoveryLink(uniqueKey.toString(), email)) {
-                return "errors/error_redis_database";
-            };
-            return "users/link_confirmation_password_ recovery";
-        } else {
-            return "users/error_email_absent";}
-    }
-
-    @GetMapping("/check_code/:{confirmationCode}")
-    public String passwordResetCheckCode(@PathVariable("confirmationCode") String confirmationCode, Model model){
-        model.addAttribute("confirmationKey", confirmationCode);
-        if (userDAO.isPasswordRecoveryLink(confirmationCode)) {
-            return "users/password_reset";
-        } else {
-            return "errors/error_confirmation_link";
+    public ResponseEntity<?> createPasswordRecoveryLink(@RequestBody User user) {
+        if ((user.getEmail() == "") || (user.getEmail() == null)) {
+            return new ResponseEntity<>("field 'email' shouldn't be empty", HttpStatus.BAD_REQUEST);
+        }
+        String emailRegex = "^(.+)@(.+)$";
+        Pattern pattern = Pattern.compile(emailRegex);
+        if (!pattern.matcher(user.getEmail()).matches()) {
+            return new ResponseEntity<>("Not valid email", HttpStatus.BAD_REQUEST);
+        }
+        try {
+            if (userDAO.readByEmail(user.getEmail()).size() > 0) {
+                UUID uniqueKey = UUID.randomUUID();
+                userDAO.setPasswordRecoveryLink(uniqueKey.toString(), user.getEmail());
+                return new ResponseEntity<>("POST this code: " + uniqueKey.toString() + " and new_password to /auth/reset", HttpStatus.OK);
+            } else {
+                return new ResponseEntity<>("Email not found in database (no user with this email).", HttpStatus.BAD_REQUEST);
+            }
+        } catch (JedisException | HibernateException j) {
+            return new ResponseEntity<>("Database error", HttpStatus.NOT_ACCEPTABLE);
         }
     }
+
 
     @PostMapping("/reset")
-    public String passwordReset(@RequestParam("new_password") String new_password,
-                                @RequestParam("confirmationCode") String confirmationCode) {
-        if (userDAO.isPasswordRecoveryLink(confirmationCode)) {
-
-            try {
-                userDAO.isPasswordReset(confirmationCode, new_password);
-                // добавить if по try из DAO (all Exception)
-            } catch (Exception e) {
-// Добавить действие
+    public ResponseEntity<?> passwordReset(@RequestParam("new_password") String new_password,
+                                           @RequestParam("code") String code) {
+        if ((new_password == null) || (new_password.length() < 4)) {
+            return new ResponseEntity<>("Password shouldn't be empty and must be >=4 characters", HttpStatus.BAD_REQUEST);
+        }
+        try {
+            if (userDAO.isPasswordRecoveryLink(code)) {
+                userDAO.isPasswordReset(code, new_password);
+                return new ResponseEntity<>("reset password ok!", HttpStatus.OK);
+            } else {
+                return new ResponseEntity<>("Confirmation link УСТАЛЕЛ или НЕВЕРЕН", HttpStatus.I_AM_A_TEAPOT);
             }
-            return "users/congratulations_success_password_reset";
-        } else {
-            return "errors/error_confirmation_link";
+        } catch (JedisException | HibernateException j) {
+            return new ResponseEntity<>("Database error", HttpStatus.NOT_ACCEPTABLE);
         }
     }
 
+    @GetMapping("/check_code")
+    public ResponseEntity<?> checkCode(@RequestParam("code") String code) {
+        try {
+            if (userDAO.isPasswordRecoveryLink(code)) {
+                return new ResponseEntity<>("Confirmation link ok!", HttpStatus.OK);
+            } else {
+                return new ResponseEntity<>("Confirmation link УСТАЛЕЛ или НЕВЕРЕН", HttpStatus.I_AM_A_TEAPOT);
+            }
+        } catch (JedisException j) {
+            return new ResponseEntity<>("Redis database error", HttpStatus.NOT_ACCEPTABLE);
+        }
+    }
 }

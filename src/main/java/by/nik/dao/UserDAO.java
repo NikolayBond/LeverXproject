@@ -1,5 +1,6 @@
 package by.nik.dao;
 
+import by.nik.models.Game;
 import by.nik.models.User;
 import by.nik.util.HibernateSessionFactoryUtil;
 import org.hibernate.HibernateException;
@@ -10,6 +11,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import redis.clients.jedis.Jedis;
 import org.springframework.security.crypto.bcrypt.BCrypt;
+import redis.clients.jedis.exceptions.JedisException;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -25,17 +27,11 @@ public class UserDAO {
     private User user;
     public UserDAO(User user, PasswordEncoder passwordEncoder) {
         this.user = user;
-
         this.passwordEncoder = passwordEncoder;
     }
 
 
-    public String createConfirmationCode() {
-        UUID uniqueKey = UUID.randomUUID();
-        return uniqueKey.toString();
-    }
-
- // file properties
+// file properties
     /*
     String rootPath = Thread.currentThread().getContextClassLoader().getResource("").getPath();
     String defaultConfigPath = rootPath + "redis.properties";
@@ -52,24 +48,21 @@ public class UserDAO {
      */
 //*****************************
 
+
     public boolean create(User user, String confirmationCode) {
-// add "url" to file par
         try (Jedis jedis = new Jedis("localhost")) {
-            if (!jedis.ping().equalsIgnoreCase("PONG")) {return false;}
+//            if (!jedis.ping().equalsIgnoreCase("PONG")) {return false;}
 
             String originalPassword = user.getPassword();
 //            String generatedPasswordHash = BCrypt.hashpw(originalPassword, BCrypt.gensalt(12));
-
             String generatedPasswordHash = passwordEncoder.encode(originalPassword);
-
-            System.out.println(generatedPasswordHash);
 
             jedis.hset("user:" + confirmationCode, "first_name", user.getFirst_name());
             jedis.hset("user:" + confirmationCode, "last_name", user.getLast_name());
             jedis.hset("user:" + confirmationCode, "password", generatedPasswordHash);
             jedis.hset("user:" + confirmationCode, "email", user.getEmail());
 
-            jedis.expire("user:" + confirmationCode, 10); // 86400
+            jedis.expire("user:" + confirmationCode, 15); // 86400
 
             return true;
         } catch (Exception e) {
@@ -77,38 +70,39 @@ public class UserDAO {
         }
     }
 
-
-    public boolean isConfirmedRegistrationLink(String confirmationCode, User user){
-        try (Jedis jedis = new Jedis("localhost")) {
-            if (!jedis.ping().equalsIgnoreCase("PONG")) {return false;}
-            if (jedis.exists("user:" + confirmationCode)) {
-                user.setFirst_name(jedis.hget("user:" + confirmationCode, "first_name"));
-                user.setLast_name(jedis.hget("user:" + confirmationCode, "last_name"));
-                user.setPassword(jedis.hget("user:" + confirmationCode, "password"));
-                user.setEmail(jedis.hget("user:" + confirmationCode, "email"));
-                return true;
-            } else {
-                return false;
-            }
-        } catch (Exception e) {
-            return false;
-        }
-
+    @SuppressWarnings("unchecked")
+    public boolean isPresent(String email) throws HibernateException {
+        Session session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
+        List<User> users = session.createQuery("from User where email = '" + email + "'").list();
+        session.close();
+        return users.size() > 0;
     }
 
-    public boolean save(User user) {
-        try {
-            Session session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
-            Transaction tx1 = session.beginTransaction();
-                session.save(user);
-            tx1.commit();
-            session.close();
+
+    public boolean isConfirmedRegistrationLink(String confirmationCode, User user) throws JedisException {
+        Jedis jedis = new Jedis("localhost");
+        if (jedis.exists("user:" + confirmationCode)) {
+            user.setFirst_name(jedis.hget("user:" + confirmationCode, "first_name"));
+            user.setLast_name(jedis.hget("user:" + confirmationCode, "last_name"));
+            user.setPassword(jedis.hget("user:" + confirmationCode, "password"));
+            user.setEmail(jedis.hget("user:" + confirmationCode, "email"));
+            jedis.close();
             return true;
-        } catch (Exception e) {
+        } else {
+            jedis.close();
             return false;
         }
-
     }
+
+
+    public void save(User user) throws HibernateException {
+        Session session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
+        Transaction tx = session.beginTransaction();
+            session.save(user);
+        tx.commit();
+        session.close();
+    }
+
 
     @SuppressWarnings("unchecked")
     public List<User> readByEmail(String email) throws HibernateException {
@@ -118,56 +112,43 @@ public class UserDAO {
         return users;
     }
 
-    public boolean setPasswordRecoveryLink(String confirmationCode, String email){
-        try (Jedis jedis = new Jedis("localhost")) {
-            if (!jedis.ping().equalsIgnoreCase("PONG")) {return false;}
-            jedis.set("password_recovery:" + confirmationCode, email);
-            jedis.expire("password_recovery:" + confirmationCode, 25);
+
+    public void setPasswordRecoveryLink(String confirmationCode, String email) throws JedisException {
+        Jedis jedis = new Jedis("localhost");
+        jedis.set("password_recovery:" + confirmationCode, email);
+        jedis.expire("password_recovery:" + confirmationCode, 25);
+        jedis.close();
+    }
+
+
+    public boolean isPasswordRecoveryLink(String code) throws JedisException {
+        Jedis jedis = new Jedis("localhost");
+        if (jedis.exists("password_recovery:" + code)) {
+            jedis.close();
             return true;
-        } catch (Exception e) {
+        } else {
+            jedis.close();
             return false;
         }
     }
 
-    public boolean isPasswordRecoveryLink(String confirmationCode){
-        try (Jedis jedis = new Jedis("localhost")) {
-            if (!jedis.ping().equalsIgnoreCase("PONG")) {return false;}
-            if (jedis.exists("password_recovery:" + confirmationCode)) {
-                return true;
-            } else {
-                return false;
-            }
-        } catch (Exception e) {
-            return false;
+
+    public boolean isPasswordReset(String code, String new_password) throws JedisException, HibernateException {
+        String generatedPasswordHash = passwordEncoder.encode(new_password);
+
+        Jedis jedis = new Jedis("localhost");
+        String email = jedis.get("password_recovery:" + code);
+        jedis.close();
+
+        Session session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
+        Transaction tx = session.beginTransaction();
+            int rowsUpdated = session.createQuery("UPDATE User SET password = '"+ generatedPasswordHash +"' where email = '" + email + "'").executeUpdate();
+        tx.commit();
+        session.close();
+        if (rowsUpdated > 0) {
+            return true;
         }
-    }
-
-// throws убрать если не будем возиться
-    public boolean isPasswordReset(String confirmationCode, String new_password) throws Exception {
-        // ЗАМЕНИТЬ отдельное введение пароля в иьюшке на модель user
-
-        String generatedPasswordHash = BCrypt.hashpw(new_password, BCrypt.gensalt(12));
-
-        try (Jedis jedis = new Jedis("localhost")) {
-            if (!jedis.ping().equalsIgnoreCase("PONG")) {return false;}
-
-            String email = jedis.get("password_recovery:" + confirmationCode);
-
-            try {
-                Session session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
-                Transaction tx1 = session.beginTransaction();
-                    int rowsUpdated = session.createQuery("UPDATE User SET password = '"+ generatedPasswordHash +"' where email = '" + email + "'").executeUpdate();
-                    if (rowsUpdated > 0) {
-                        return true;
-                    }
-                tx1.commit();
-                session.close();
-                return false;
-            } catch (HibernateException e) {
-                return false;
-            }
-//            throw new JedisDataException("Jedis error");
-        }
+        return false;
     }
 
 
