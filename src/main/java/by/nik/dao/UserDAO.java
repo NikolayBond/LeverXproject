@@ -1,12 +1,10 @@
 package by.nik.dao;
 
-import by.nik.models.Game;
 import by.nik.models.User;
 import by.nik.util.HibernateSessionFactoryUtil;
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import redis.clients.jedis.Jedis;
@@ -32,25 +30,23 @@ public class UserDAO {
 
 
 // file properties
-    /*
     String rootPath = Thread.currentThread().getContextClassLoader().getResource("").getPath();
     String defaultConfigPath = rootPath + "redis.properties";
-    Properties properties;
+    String redisUrl;
     {
         Properties properties = new Properties();
-        try {
-            properties.load(new FileInputStream(defaultConfigPath));
+        try (FileInputStream fileInputStream = new FileInputStream(defaultConfigPath)) {
+            properties.load(fileInputStream);
+            this.redisUrl = properties.getProperty("redis.url", "localhost");
         } catch (IOException e) {
+            this.redisUrl = "localhost";
         }
     }
-    String redisUrl = properties.getProperty("redis.url", "localhost");
-
-     */
 //*****************************
 
 
     public boolean create(User user, String confirmationCode) {
-        try (Jedis jedis = new Jedis("localhost")) {
+        try (Jedis jedis = new Jedis(redisUrl)) {
 //            if (!jedis.ping().equalsIgnoreCase("PONG")) {return false;}
 
             String originalPassword = user.getPassword();
@@ -80,7 +76,7 @@ public class UserDAO {
 
 
     public boolean isConfirmedRegistrationLink(String confirmationCode, User user) throws JedisException {
-        Jedis jedis = new Jedis("localhost");
+        Jedis jedis = new Jedis(redisUrl);
         if (jedis.exists("user:" + confirmationCode)) {
             user.setFirst_name(jedis.hget("user:" + confirmationCode, "first_name"));
             user.setLast_name(jedis.hget("user:" + confirmationCode, "last_name"));
@@ -114,7 +110,7 @@ public class UserDAO {
 
 
     public void setPasswordRecoveryLink(String confirmationCode, String email) throws JedisException {
-        Jedis jedis = new Jedis("localhost");
+        Jedis jedis = new Jedis(redisUrl);
         jedis.set("password_recovery:" + confirmationCode, email);
         jedis.expire("password_recovery:" + confirmationCode, 25);
         jedis.close();
@@ -122,7 +118,7 @@ public class UserDAO {
 
 
     public boolean isPasswordRecoveryLink(String code) throws JedisException {
-        Jedis jedis = new Jedis("localhost");
+        Jedis jedis = new Jedis(redisUrl);
         if (jedis.exists("password_recovery:" + code)) {
             jedis.close();
             return true;
@@ -136,7 +132,7 @@ public class UserDAO {
     public boolean isPasswordReset(String code, String new_password) throws JedisException, HibernateException {
         String generatedPasswordHash = passwordEncoder.encode(new_password);
 
-        Jedis jedis = new Jedis("localhost");
+        Jedis jedis = new Jedis(redisUrl);
         String email = jedis.get("password_recovery:" + code);
         jedis.close();
 
