@@ -44,13 +44,12 @@ public class CommentsController {
             if ((comment.getMessage() == "") || (comment.getMessage() == null)) {
                 return new ResponseEntity<>("field 'message' shouldn't be empty", HttpStatus.BAD_REQUEST);
             }
-// Автора берем из аутентификации
+
             List<User> users = userDAO.readByEmail(userFromAuthentication.getUsername());
             if (users.size() != 1) {
                 return new ResponseEntity<>("nonsense! -> author (from login) not found in database", HttpStatus.BAD_REQUEST);
             }
             comment.setAuthor_id(users.get(0).getId());
-//
 
             comment.setCreated_at(new Timestamp(System.currentTimeMillis()));
             comment.setApproved(false);
@@ -95,7 +94,7 @@ public class CommentsController {
             if (comment == null) {
                 return new ResponseEntity<>("comment id not found in database", HttpStatus.BAD_REQUEST);
             }
-// Автора берем из аутентификации
+
             List<User> users = userDAO.readByEmail(userFromAuthentication.getUsername());
             if (users.size() != 1) {
                 return new ResponseEntity<>("nonsense! -> author (from login) not found in database", HttpStatus.BAD_REQUEST);
@@ -121,7 +120,7 @@ public class CommentsController {
             if (originalComment == null) {
                 return new ResponseEntity<>("comment not found in database", HttpStatus.BAD_REQUEST);
             }
-// Автора берем из аутентификации
+
             List<User> users = userDAO.readByEmail(userFromAuthentication.getUsername());
             if (users.size() != 1) {
                 return new ResponseEntity<>("nonsense! -> author (from login) not found in database", HttpStatus.BAD_REQUEST);

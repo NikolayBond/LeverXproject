@@ -52,7 +52,7 @@ public class SpringConfig implements WebMvcConfigurer {
         registry.viewResolver(resolver);
     }
 
-    // my testing security
+    // my security
     @Bean
     public DataSource getDataSource()
     {

@@ -29,20 +29,23 @@ public class UserDAO {
     }
 
 
-// file properties
-    String rootPath = Thread.currentThread().getContextClassLoader().getResource("").getPath();
-    String defaultConfigPath = rootPath + "redis.properties";
     String redisUrl;
     {
-        Properties properties = new Properties();
-        try (FileInputStream fileInputStream = new FileInputStream(defaultConfigPath)) {
-            properties.load(fileInputStream);
-            this.redisUrl = properties.getProperty("redis.url", "localhost");
-        } catch (IOException e) {
+        try {
+            String rootPath = Thread.currentThread().getContextClassLoader().getResource("").getPath();
+            String defaultConfigPath = rootPath + "redis.properties";
+
+            Properties properties = new Properties();
+            try (FileInputStream fileInputStream = new FileInputStream(defaultConfigPath)) {
+                properties.load(fileInputStream);
+                this.redisUrl = properties.getProperty("redis.url", "localhost");
+            } catch (IOException e) {
+                this.redisUrl = "localhost";
+            }
+        } catch (NullPointerException n) {
             this.redisUrl = "localhost";
         }
     }
-//*****************************
 
 
     public boolean create(User user, String confirmationCode) {
@@ -58,7 +61,7 @@ public class UserDAO {
             jedis.hset("user:" + confirmationCode, "password", generatedPasswordHash);
             jedis.hset("user:" + confirmationCode, "email", user.getEmail());
 
-            jedis.expire("user:" + confirmationCode, 15); // 86400
+            jedis.expire("user:" + confirmationCode, 25); // 86400
 
             return true;
         } catch (Exception e) {
@@ -145,15 +148,6 @@ public class UserDAO {
             return true;
         }
         return false;
-    }
-
-
-    // переделан ОК!
-    public User read(Integer userID) throws HibernateException {
-        Session session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
-        User user = session.get(User.class, userID);
-        session.close();
-        return user;
     }
 
 }

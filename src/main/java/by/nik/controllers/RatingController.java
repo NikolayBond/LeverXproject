@@ -20,7 +20,7 @@ public class RatingController {
         this.ratingDAO = ratingDAO;
     }
 
-    // get traders rating
+    // get individual trader's rating
     @GetMapping("/{postID}")
     public ResponseEntity<?> getRatingByTraders(@PathVariable("postID") Integer postID) {
         try {
@@ -41,6 +41,4 @@ public class RatingController {
         }
     }
 
-//Filter by games and min-max scores
-//    "select bk.writer, max(bk.price) from Book as bk group by bk.writer having avg(bk.price) > 100";
 }

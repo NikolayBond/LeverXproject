@@ -17,12 +17,6 @@ import javax.sql.DataSource;
 @EnableWebSecurity
 public class ApplicationSecurityConfig extends WebSecurityConfigurerAdapter {
 
-//    @Override
-//    public void configure(WebSecurity web) throws Exception {
-//        web.ignoring().antMatchers("/games");
-////        web.ignoring().antMatchers("/*");
-//    }
-
     final
     DataSource dataSource;
     public ApplicationSecurityConfig(DataSource dataSource) {

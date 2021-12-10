@@ -74,13 +74,6 @@ public class UsersController {
         }
     }
 
-    /*
-    стандартному сценарию./auth/forgot_password POST {email} отправлять письмо
-    с кодом
-/auth/reset POST {code, new_password} брать из редиса код и если он верен,
-    то устанавливать новый пароль
-/auth/check_code GET {code} проверять актуальность кода сброса и возвращать   в ответ
-     */
 
     @PostMapping("/forgot_password")
     public ResponseEntity<?> createPasswordRecoveryLink(@RequestBody User user) {
@@ -114,8 +107,11 @@ public class UsersController {
         }
         try {
             if (userDAO.isPasswordRecoveryLink(code)) {
-                userDAO.isPasswordReset(code, new_password);
-                return new ResponseEntity<>("reset password ok!", HttpStatus.OK);
+                if (userDAO.isPasswordReset(code, new_password)) {
+                    return new ResponseEntity<>("reset password ok!", HttpStatus.OK);
+                } else {
+                    return new ResponseEntity<>("reset password fault !!!", HttpStatus.NOT_ACCEPTABLE);
+                }
             } else {
                 return new ResponseEntity<>("Confirmation link outdated or wrong", HttpStatus.I_AM_A_TEAPOT);
             }
@@ -123,6 +119,7 @@ public class UsersController {
             return new ResponseEntity<>("Database error", HttpStatus.NOT_ACCEPTABLE);
         }
     }
+
 
     @GetMapping("/check_code")
     public ResponseEntity<?> checkCode(@RequestParam("code") String code) {

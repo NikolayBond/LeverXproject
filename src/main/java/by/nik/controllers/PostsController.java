@@ -37,7 +37,7 @@ public class PostsController {
             if (originalPost == null) {
                 return new ResponseEntity<>("post (id) not found in database", HttpStatus.BAD_REQUEST);
             }
-// Автора берем из аутентификации
+
             List<User> users = userDAO.readByEmail(userFromAuthentication.getUsername());
             if (users.size() != 1) {
                 return new ResponseEntity<>("nonsense! -> author (from login) not found in database", HttpStatus.BAD_REQUEST);
@@ -81,7 +81,7 @@ public class PostsController {
             if (gameDAO.read(post.getGame_id()) == null) {
                 return new ResponseEntity<>("game (id) not found in database", HttpStatus.BAD_REQUEST);
             }
-// Автора берем из аутентификации
+
             List<User> users = userDAO.readByEmail(userFromAuthentication.getUsername());
             if (users.size() != 1) {
                 return new ResponseEntity<>("nonsense! -> author (from login) not found in database", HttpStatus.BAD_REQUEST);
@@ -115,7 +115,7 @@ public class PostsController {
     @GetMapping("/my")
     public ResponseEntity<?> getAllByUserID(@AuthenticationPrincipal org.springframework.security.core.userdetails.User userFromAuthentication) {
         try {
-// Автора берем из аутентификации
+
             List<User> users = userDAO.readByEmail(userFromAuthentication.getUsername());
             if (users.size() != 1) {
                 return new ResponseEntity<>("nonsense! -> author (from login) not found in database", HttpStatus.BAD_REQUEST);
@@ -134,14 +134,12 @@ public class PostsController {
     @DeleteMapping("/object/{postID}")
     public ResponseEntity<?> delete(@PathVariable("postID") Integer postID,
                                     @AuthenticationPrincipal org.springframework.security.core.userdetails.User userFromAuthentication) {
-// User берем из авторизации
-        Integer author_id = 1;
         try {
             Post post = postDAO.read(postID);
             if (post == null) {
                 return new ResponseEntity<>("post (id) not found in database", HttpStatus.BAD_REQUEST);
             }
-// Автора берем из аутентификации
+
             List<User> users = userDAO.readByEmail(userFromAuthentication.getUsername());
             if (users.size() != 1) {
                 return new ResponseEntity<>("nonsense! -> author (from login) not found in database", HttpStatus.BAD_REQUEST);
